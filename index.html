@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasapalabra Mejorado: Trasplante Cardíaco</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            text-align: center;
+            font-size: 35px;
+            font-weight: bold;
+            color: darkblue;
+        }
+        h2 {
+            text-align: center;
+            font-size: 25px;
+            font-weight: lighter;
+            color: darkblue;
+            font-style: italic;
+        }
+        .game-container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .rosco {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto 20px;
+        }
+        .letter {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        .correct { background-color: #4CAF50; color: white; }
+        .incorrect { background-color: #f44336; color: white; }
+        .current { background-color: #2196F3; color: white; }
+        #definition {
+            margin-bottom: 0px;
+            font-style: italic;
+            height: 20px;
+            padding: 30px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 5px;
+        }
+        #timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: red;
+            margin-bottom: 10px;
+        }
+        #finalScore {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #results {
+            text-align: left;
+            margin-top: 20px;
+            display: none;
+        }
+        .result-item {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .result-correct {
+            background-color: #e8f5e9;
+        }
+        .result-incorrect {
+            background-color: #ffebee;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #results, #results * {
+                visibility: visible;
+            }
+            #results {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Pasapalabra Trasplante Cardíaco</h1>
+        <h2>Servicio de Farmacia. Hospital U.P. La Fe</h2>
+        <div id="timer">05:00</div>
+        <div class="rosco" id="rosco"></div>
+        <div id="definition"></div>
+        <input type="text" id="answer" placeholder="Tu respuesta">
+        <button onclick="checkAnswer()">Responder</button>
+        <button onclick="pasapalabra()">Pasapalabra</button>
+        <button onclick="newRosco()">Nuevo rosco</button>
+        <p id="score"></p>
+        <div id="finalScore"></div>
+        <button id="viewResults" style="display: none;" onclick="showResults()">Ver resultados</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const allWords = {
+            A: [
+                {word: "Antiséptico", definition: "Tipo de producto usado para el cuidado bucal después del cepillado"},
+                {word: "Advagraf", definition: "Medicamento inmunosupresor que se toma una vez al día"},
+                {word: "Analgésico", definition: "Medicamento para calmar el dolor, como el paracetamol"}
+            ],
+            B: [
+                {word: "Biopsia", definition: "Procedimiento médico para detectar rechazo en el órgano trasplantado"},
+                {word: "Bicarbonato", definition: "Ingrediente usado en una bebida para reponer sales minerales en caso de diarrea"}
+            ],
+            C: [
+                {word: "Ciclosporina", definition: "Medicamento inmunosupresor que se presenta en cápsulas de diferentes colores"},
+                {word: "Colesterol", definition: "Sustancia que se debe controlar en la dieta post-trasplante"}
+            ],
+            D: [
+                {word: "Dieta", definition: "Régimen alimenticio que debe seguirse para evitar el aumento de peso y disminuir factores de riesgo"},
+                {word: "Diarrea", definition: "Condición que requiere una dieta específica y reposición de líquidos"}
+            ],
+            E: [
+                {word: "Estatinas", definition: "Medicamentos indicados para reducir niveles elevados de colesterol"},
+                {word: "Esternón", definition: "Hueso que necesita un periodo de recuperación después del trasplante"}
+            ],
+            F: [
+                {word: "Fiebre", definition: "Síntoma de alerta que debe ser controlado y comunicado al médico si persiste"},
+                {word: "Farmacia", definition: "Lugar donde se recogen los medicamentos inmunosupresores tras el alta"}
+            ],
+            G: [
+                {word: "Gripe", definition: "Enfermedad viral contra la que se recomienda vacunarse anualmente"},
+                {word: "Grasas", definition: "Tipo de nutrientes que deben limitarse en la dieta post-trasplante"}
+            ],
+            H: [
+                {word: "Higiene", definition: "Conjunto de prácticas fundamentales para prevenir infecciones en pacientes trasplantados"},
+                {word: "Hipertensión", definition: "Condición que debe controlarse después del trasplante"}
+            ],
+            I: [
+                {word: "Inmunosupresores", definition: "Medicamentos esenciales para prevenir el rechazo del órgano trasplantado"},
+                {word: "Infección", definition: "Complicación que se debe prevenir con medidas higiénicas y medicamentos"}
+            ],
+            J: [
+                {word: "Jabón", definition: "Producto esencial para el lavado frecuente de manos"},
+                {word: "Jugo", definition: "Líquido de frutas que debe evitarse si es de pomelo"}
+            ],
+            L: [
+                {word: "Legumbres", definition: "Alimentos ricos en fibra recomendados para prevenir el estreñimiento"},
+                {word: "Lavado", definition: "Acción frecuente recomendada para las manos"}
+            ],
+            M: [
+                {word: "Mascarilla", definition: "Elemento de protección recomendado en lugares concurridos durante los primeros meses"},
+                {word: "Micofenolato", definition: "Medicamento inmunosupresor que se toma dos veces al día"}
+            ],
+            N: [
+                {word: "Nistatina", definition: "Medicamento antifúngico utilizado para prevenir infecciones locales"},
+                {word: "Nutrición", definition: "Aspecto importante a cuidar después del trasplante"}
+            ],
+            O: [
+                {word: "Omeprazol", definition: "Medicamento que se toma por la mañana durante el primer mes de trasplante"},
+                {word: "Osteoporosis", definition: "Condición que se previene con una dieta rica en calcio"}
+            ],
+            P: [
+                {word: "Prograf", definition: "Nombre comercial de un medicamento inmunosupresor que contiene tacrolimus"},
+                {word: "Peso", definition: "Factor que debe controlarse para evitar complicaciones post-trasplante"}
+            ],
+            R: [
+                {word: "Rechazo", definition: "Complicación que puede ocurrir en cualquier momento y requiere revisiones periódicas"},
+                {word: "Reposo", definition: "Estado recomendado después de las comidas para evitar fatiga"}
+            ],
+            S: [
+                {word: "Sol", definition: "Elemento al que la piel es más sensible después del trasplante, requiriendo protección"},
+                {word: "Sandimmun", definition: "Medicamento inmunosupresor que contiene ciclosporina"}
+            ],
+            T: [
+                {word: "Tacrolimus", definition: "Inmunosupresor que debe tomarse con el estómago vacío"},
+                {word: "Temperatura", definition: "Medida corporal que debe controlarse regularmente después del trasplante"}
+            ],
+            V: [
+                {word: "Vacuna", definition: "Medida preventiva recomendada contra la gripe y otras enfermedades"},
+                {word: "Vitaminas", definition: "Suplementos que pueden ser necesarios después del trasplante"}
+            ],
+            Z: [
+                {word: "Zumo", definition: "Bebida de frutas que debe evitarse si es de pomelo debido a interacciones con medicamentos"},
+                {word: "Zoster", definition: "Infección viral que puede prevenirse con vacunación en pacientes trasplantados"}
+            ]
+        };
+
+        let words = [];
+        let currentIndex = 0;
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        let remainingWords = [];
+        let answeredWords = [];
+        let userAnswers = {};
+        let timerInterval;
+        let timeLeft = 300; // 5 minutes in seconds
+
+        function selectRandomWords() {
+            words = [];
+            for (let letter in allWords) {
+                const randomIndex = Math.floor(Math.random() * allWords[letter].length);
+                words.push({letter: letter, ...allWords[letter][randomIndex]});
+            }
+        }
+
+        function initGame() {
+            selectRandomWords();
+            currentIndex = 0;
+            correctAnswers = 0;
+            incorrectAnswers = 0;
+            remainingWords = [...words];
+            answeredWords = new Array(words.length).fill(null);
+            userAnswers = {};
+            timeLeft = 300;
+
+            const rosco = document.getElementById('rosco');
+            rosco.innerHTML = '';
+            words.forEach((word, index) => {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = 'letter';
+                letterDiv.textContent = word.letter;
+                const angle = (index / words.length) * 2 * Math.PI;
+                const radius = 180;
+                const x = Math.cos(angle) * radius + 200;
+                const y = Math.sin(angle) * radius + 200;
+                letterDiv.style.left = `${x}px`;
+                letterDiv.style.top = `${y}px`;
+                rosco.appendChild(letterDiv);
+            });
+
+            document.getElementById('answer').disabled = false;
+            document.querySelector('button[onclick="checkAnswer()"]').disabled = false;
+            document.querySelector('button[onclick="pasapalabra()"]').disabled = false;
+            document.getElementById('finalScore').textContent = '';
+            document.getElementById('viewResults').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+
+            updateGame();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateGame() {
+            const letters = document.querySelectorAll('.letter');
+            letters.forEach((letter, index) => {
+                letter.classList.remove('current');
+                if (words[index] === remainingWords[currentIndex]) {
+                    letter.classList.add('current');
+                }
+            });
+            if (remainingWords.length > 0) {
+                document.getElementById('definition').textContent = remainingWords[currentIndex].definition;
+            } else {
+                document.getElementById('definition').textContent = "¡Has completado todas las palabras!";
+            }
+            document.getElementById('answer').value = '';
+            document.getElementById('score').textContent = `Correctas: ${correctAnswers} | Incorrectas: ${incorrectAnswers}`;
+        }
+
+        function checkAnswer() {
+            if (remainingWords.length === 0) {
+                endGame();
+                return;
+            }
+
+            const userAnswer = document.getElementById('answer').value.toLowerCase();
+            const correctAnswer = remainingWords[currentIndex].word.toLowerCase();
+            const letters = document.querySelectorAll('.letter');
+            const currentLetter = words.findIndex(word => word.letter === remainingWords[currentIndex].letter);
+
+            userAnswers[remainingWords[currentIndex].letter] = userAnswer;
+
+            if (userAnswer === correctAnswer) {
+                letters[currentLetter].classList.remove('current');
+                letters[currentLetter].classList.add('correct');
+                correctAnswers++;
+                answeredWords[currentLetter] = true;
+            } else {
+                letters[currentLetter].classList.remove('current');
+                letters[currentLetter].classList.add('incorrect');
+                incorrectAnswers++;
+                answeredWords[currentLetter] = false;
+            }
+
+            remainingWords.splice(currentIndex, 1);
+
+            if (remainingWords.length === 0) {
+                endGame();
+            } else {
+                if (currentIndex >= remainingWords.length) {
+                    currentIndex = 0;
+                }
+                updateGame();
+            }
+        }
+
+        function pasapalabra() {
+            if (remainingWords.length > 1) {
+                currentIndex = (currentIndex + 1) % remainingWords.length;
+                updateGame();
+            } else if (remainingWords.length === 1) {
+                alert("Solo queda una palabra. Debes responderla.");
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            
+            const letters = document.querySelectorAll('.letter');
+            letters.forEach((letter, index) => {
+                if (answeredWords[index] === null) {
+                    letter.classList.remove('current');
+                    letter.classList.add('incorrect');
+                    incorrectAnswers++;
+                    userAnswers[words[index].letter] = "";
+                }
+            });
+
+            const finalScore = document.getElementById('finalScore');
+            finalScore.textContent = `Juego terminado! Puntuación final: ${correctAnswers} correctas, ${incorrectAnswers} incorrectas`;
+            document.getElementById('answer').disabled = true;
+            document.querySelector('button[onclick="checkAnswer()"]').disabled = true;
+            document.querySelector('button[onclick="pasapalabra()"]').disabled = true;
+            document.getElementById('viewResults').style.display = 'inline-block';
+        }
+
+        function newRosco() {
+            initGame();
+        }
+
+        function showResults() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Resultados del Pasapalabra: Trasplante Cardíaco</h2>';
+            resultsDiv.style.display = 'block';
+
+            words.forEach(word => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                
+                const userAnswer = userAnswers[word.letter] || "No contestada";
+                const isCorrect = userAnswer.toLowerCase() === word.word.toLowerCase();
+                
+                resultItem.classList.add(isCorrect ? 'result-correct' : 'result-incorrect');
+                
+                let resultHTML = `<strong>${word.letter}: ${word.definition}</strong><br>`;
+                resultHTML += `Tu respuesta: ${userAnswer}<br>`;
+                
+                if (!isCorrect) {
+                    resultHTML += `Respuesta correcta: ${word.word}<br>`;
+                }
+                
+                resultItem.innerHTML = resultHTML;
+                resultsDiv.appendChild(resultItem);
+            });
+
+            // Añadir botón de impresión
+            const printButton = document.createElement('button');
+            printButton.textContent = 'Imprimir resultados';
+            printButton.onclick = printResults;
+            resultsDiv.appendChild(printButton);
+        }
+
+        function printResults() {
+            window.print();
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
